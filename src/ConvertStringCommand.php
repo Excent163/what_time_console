@@ -7,6 +7,7 @@ namespace App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ConvertStringCommand extends Command
@@ -20,10 +21,15 @@ class ConvertStringCommand extends Command
             ->addArgument(
                 'string',
                 InputArgument::IS_ARRAY | InputArgument::REQUIRED,
-                'Converted string'
+                'Converted string',
             )
-            ->addOption('odd', 'o', null, 'Odd characters')
-            ->addOption('even', 'e', null, 'Even characters')
+            ->addOption(
+                'options',
+                'o',
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Even or odd characters?',
+                ['even', 'odd'],
+            )
         ;
     }
 
@@ -32,17 +38,13 @@ class ConvertStringCommand extends Command
         $arrayStr = $input->getArgument('string');
         $str = '';
 
+        $options = $input->getOption('options');
+
         if (count($arrayStr) > 0) {
             $str .= implode(' ', $arrayStr);
         }
 
-        if ($input->getOption('odd')) {
-            $str = $this->convertString($str, 'odd');
-        } elseif ($input->getOption('even')) {
-            $str = $this->convertString($str, 'even');
-        } else {
-            $str = $this->convertString($str);
-        }
+        $str = $this->convertString($str, $options[0] === 'even' || $options[0] === '=even');
 
         $output->writeln($str);
 
@@ -51,22 +53,16 @@ class ConvertStringCommand extends Command
 
     /**
      * @param string $string
-     * @param string $convert ODD || EVEN
+     * @param bool $convert 0 = ODD || 1 = EVEN
      * @return string
      */
-    private function convertString(string $string = '', string $convert = 'odd'): string
+    private function convertString(string $string = '', bool $convert = true): string
     {
         $arr = mb_str_split($string);
         $str = '';
 
-        $convert = $convert === 'even' ? 1 : 0;
-
         foreach ($arr as $key => $value) {
-            if ($key % 2 == $convert) {
-                $str .= mb_strtolower($value);
-            } else {
-                $str .= mb_strtoupper($value);
-            }
+            $str .= $key % 2 == $convert ? mb_strtolower($value) : mb_strtoupper($value);
         }
 
         return $str;
